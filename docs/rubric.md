@@ -72,7 +72,7 @@ Excellent:
 
 * Game rules are separated from console input/output.
 * Duplicated legal-play logic is reduced.
-* Card or rule behavior has a clearer home.
+* codes.Card or rule behavior has a clearer home.
 * At least one rule can be tested without running the full CLI game.
 * The design moves toward MVC-like separation without superficial naming.
 

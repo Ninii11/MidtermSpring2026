@@ -3,4 +3,4 @@ set -eu
 
 rm -rf out
 mkdir -p out
-javac -d out src/*.java
+javac -d out src/codes/*.java src/tests/*.java

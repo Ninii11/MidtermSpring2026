@@ -2,7 +2,7 @@
 
 The starting code contains the following design problems:
 
-* one large `Main` class
+* one large `codes.Main` class
 * global mutable state
 * long game loop
 * mixed CLI and game logic

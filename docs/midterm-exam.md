@@ -2,7 +2,7 @@
 
 ## Context
 
-You are given a working CLI UNO-like game in `src/Main.java`.
+You are given a working CLI UNO-like game in `src/codes.Main.java`.
 
 The code is written in a procedural, feature-grown style:
 
@@ -15,7 +15,7 @@ The code is written in a procedural, feature-grown style:
 
 Your job is not to rewrite it. Your job is to make it safer and easier to change through characterization tests and incremental refactoring.
 
-## Main Goal
+## codes.Main Goal
 
 Refactor the existing game toward a clearer design while preserving behavior.
 
