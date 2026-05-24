@@ -23,14 +23,6 @@ import java.util.ArrayList;
 public final class BotStrategy {
 
     private BotStrategy() {}
-
-    /**
-     * Returns the hand index the bot wants to play, or -1 to draw.
-     *
-     * @param hand        the bot's current hand (string codes)
-     * @param upCard      current up card code
-     * @param calledColor currently called color (empty string if none)
-     */
     public static int chooseCard(ArrayList<String> hand, String upCard, String calledColor) {
         Card up = new Card(upCard);  // cached — was reconstructed on every loop iteration
 

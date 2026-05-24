@@ -28,7 +28,6 @@ import java.util.Scanner;
  */
 public class Main {
 
-    // ── Global mutable state (unchanged from original) ────────────────────────
     public static ArrayList<String> playerNames   = new ArrayList<>();
     public static ArrayList<Boolean> humanPlayers = new ArrayList<>();
     public static ArrayList<ArrayList<String>> hands = new ArrayList<>();
@@ -43,10 +42,8 @@ public class Main {
     public static Random  random  = new Random();
     public static Scanner scanner = new Scanner(System.in);
 
-    // Extracted view — owns all console I/O
     public static ConsoleView view;
 
-    // ── Entry point ───────────────────────────────────────────────────────────
 
     public static void main(String[] args) {
         int bots  = 3;
@@ -84,8 +81,6 @@ public class Main {
         view.showFinalScores(playerNames, scores);
     }
 
-    // ── Setup ─────────────────────────────────────────────────────────────────
-
     static void setupPlayers(int bots, boolean human) {
         playerNames.clear();
         humanPlayers.clear();
@@ -101,8 +96,6 @@ public class Main {
             hands.add(new ArrayList<>());
         }
     }
-
-    // ── Game loop ─────────────────────────────────────────────────────────────
 
     static void playGame() {
         buildDeck();
@@ -136,7 +129,6 @@ public class Main {
                 chosen = BotStrategy.chooseCard(hand, upCard, calledColor);
             }
 
-            // ── Draw phase ────────────────────────────────────────────────────
             if (chosen == -1) {
                 String drawn = draw();
                 hand.add(drawn);
@@ -151,7 +143,6 @@ public class Main {
                 }
             }
 
-            // ── Play phase ────────────────────────────────────────────────────
             if (chosen >= 0) {
                 if (chosen >= hand.size()) {
                     view.showPenalty(name);
@@ -231,7 +222,6 @@ public class Main {
         }
     }
 
-    // ── Deck helpers ──────────────────────────────────────────────────────────
 
     static void buildDeck() {
         deck.clear();
@@ -256,7 +246,6 @@ public class Main {
         return deck.remove(0);
     }
 
-    // ── Scoring ───────────────────────────────────────────────────────────────
 
     public static int tallyPoints() {
         int total = 0;
@@ -267,7 +256,6 @@ public class Main {
         return total;
     }
 
-    // ── Turn order ────────────────────────────────────────────────────────────
 
    public static void next() {
         currentPlayer += direction;
@@ -275,26 +263,21 @@ public class Main {
         if (currentPlayer < 0) currentPlayer = playerNames.size() - 1;
     }
 
-    // ── Self-test (uses real classes directly — no wrapper methods) ───────────
 
     static void selfTest() {
-        // view may not be initialised when --self-test is the only flag
         if (view == null) view = new ConsoleView(scanner, true);
 
         int passed = 0;
 
-        // codes.Card classification
         if (new Card("R5").color().equals("R"))               passed++; else fail("color R5");
         if (new Card("G+2").rank() == Card.Rank.DRAW_TWO)     passed++; else fail("rank +2");
         if (new Card("W4").points() == 50)                    passed++; else fail("wild points");
 
-        // Legality
         if (PlayRules.isLegal("R2", "R9", ""))                passed++; else fail("same color");
         if (PlayRules.isLegal("G9", "R9", ""))                passed++; else fail("same number");
         if (PlayRules.isLegal("B3", "W",  "B"))               passed++; else fail("called color");
         if (!PlayRules.isLegal("B3", "R9", ""))               passed++; else fail("illegal mismatch");
 
-        // Bot strategy
         ArrayList<String> h = new ArrayList<>();
         h.add("B3"); h.add("R4"); h.add("W");
         upCard = "R9"; calledColor = "";

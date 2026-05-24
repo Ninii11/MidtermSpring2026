@@ -29,8 +29,6 @@ public final class ConsoleView {
         this.quiet = quiet;
     }
 
-    // ── Output ────────────────────────────────────────────────────────────────
-
     public void showGameHeader(int gameNumber) {
         if (!quiet) System.out.println("\n=== Game " + gameNumber + " ===");
     }
@@ -88,8 +86,6 @@ public final class ConsoleView {
         }
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
-
     /**
      * Prompt the human for a card choice. Returns the hand index chosen,
      * or -1 if they type "draw".
@@ -109,13 +105,10 @@ public final class ConsoleView {
 
             if (input.equals("DRAW")) return -1;
 
-            // Any integer is returned directly — out-of-range triggers penalty upstream
             try {
                 return Integer.parseInt(input);
             } catch (NumberFormatException ignored) {
             }
-
-            // Try card code
             boolean found = false;
             for (int i = 0; i < hand.size(); i++) {
                 if (hand.get(i).equals(input)) {
@@ -155,7 +148,6 @@ public final class ConsoleView {
         return answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes");
     }
 
-    /** Formats a hand as "0:R5 1:GS ..." — same as original join(). */
     public static String joinHand(ArrayList<String> cards) {
         StringBuilder out = new StringBuilder();
         for (int i = 0; i < cards.size(); i++) {

@@ -22,13 +22,6 @@ package codes;
 public final class PlayRules {
 
     private PlayRules() {}
-
-    /**
-     * Returns true if {@code card} may legally be played on top of {@code upCard}
-     * given the currently called color (empty string if none).
-     *
-     * Pure function: no side effects, no global state.
-     */
     public static boolean isLegal(Card card, Card upCard, String calledColor) {
         if (card.isWild())                                          return true;
         if (card.color().equals(upCard.color()))                   return true;
@@ -39,8 +32,6 @@ public final class PlayRules {
                 && card.number() == upCard.number())               return true;
         return false;
     }
-
-    /** Convenience overload accepting raw card code strings. */
     public static boolean isLegal(String cardCode, String upCode, String calledColor) {
         return isLegal(new Card(cardCode), new Card(upCode), calledColor);
     }

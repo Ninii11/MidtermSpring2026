@@ -43,7 +43,6 @@ public class UnoTests {
         run("number of skip is -1",         () -> new Card("RS").number() == -1);
         run("number of wild is -1",         () -> new Card("W").number() == -1);
 
-        // ── Scoring ───────────────────────────────────────────────────────────
         run("points R5 = 5",                () -> new Card("R5").points() == 5);
         run("points Y0 = 0",                () -> new Card("Y0").points() == 0);
         run("points B9 = 9",                () -> new Card("B9").points() == 9);
@@ -53,41 +52,34 @@ public class UnoTests {
         run("points W = 50",                () -> new Card("W").points() == 50);
         run("points W4 = 50",               () -> new Card("W4").points() == 50);
 
-        // ── Matching by color ─────────────────────────────────────────────────
         run("R2 legal on R9 (same color)",  () -> PlayRules.isLegal("R2", "R9", ""));
         run("Y7 legal on YS (same color)",  () -> PlayRules.isLegal("Y7", "YS", ""));
         run("GR legal on G5 (same color)",  () -> PlayRules.isLegal("GR", "G5", ""));
         run("B+2 legal on B3 (same color)", () -> PlayRules.isLegal("B+2", "B3", ""));
 
-        // ── Matching by number ────────────────────────────────────────────────
         run("G5 legal on R5 (same number)", () -> PlayRules.isLegal("G5", "R5", ""));
         run("B0 legal on R0 (same number 0)",() -> PlayRules.isLegal("B0", "R0", ""));
         run("Y9 legal on B9 (same number)", () -> PlayRules.isLegal("Y9", "B9", ""));
 
-        // ── Matching by action type ───────────────────────────────────────────
         run("RS legal on GS (skip-on-skip)",() -> PlayRules.isLegal("RS", "GS", ""));
         run("BR legal on YR (rev-on-rev)",  () -> PlayRules.isLegal("BR", "YR", ""));
         run("G+2 legal on R+2 (d2-on-d2)", () -> PlayRules.isLegal("G+2", "R+2", ""));
 
-        // ── Wild and Wild Draw Four ───────────────────────────────────────────
         run("W legal on any card R5",       () -> PlayRules.isLegal("W", "R5", ""));
         run("W legal on any card GS",       () -> PlayRules.isLegal("W", "GS", ""));
         run("W4 legal on any card B9",      () -> PlayRules.isLegal("W4", "B9", ""));
         run("W4 legal on another wild W",   () -> PlayRules.isLegal("W4", "W", ""));
 
-        // ── Called color (after wild) ─────────────────────────────────────────
         run("B3 legal on W when B called",  () -> PlayRules.isLegal("B3", "W", "B"));
         run("YS legal on W when Y called",  () -> PlayRules.isLegal("YS", "W", "Y"));
         run("R7 illegal on W when G called",() -> !PlayRules.isLegal("R7", "W", "G"));
         run("G+2 legal on W4 when G called",() -> PlayRules.isLegal("G+2", "W4", "G"));
 
-        // ── Illegal plays ─────────────────────────────────────────────────────
         run("B3 illegal on R9 (no match)",  () -> !PlayRules.isLegal("B3", "R9", ""));
         run("GS illegal on R9 (no match)",  () -> !PlayRules.isLegal("GS", "R9", ""));
         run("Y+2 illegal on G5 (no match)", () -> !PlayRules.isLegal("Y+2", "G5", ""));
         run("B2 illegal on R5 (diff num col)",() -> !PlayRules.isLegal("B2", "R5", ""));
 
-        // ── Skip behavior ─────────────────────────────────────────────────────
         run("skip advances past next player", () -> {
             setupThreePlayerGame();
             Main.currentPlayer = 0;
@@ -96,7 +88,6 @@ public class UnoTests {
             return Main.currentPlayer == 2;
         });
 
-        // ── Reverse behavior ──────────────────────────────────────────────────
         run("reverse flips direction (3 players)", () -> {
             setupThreePlayerGame();
             Main.currentPlayer = 0;
@@ -113,7 +104,6 @@ public class UnoTests {
             return Main.currentPlayer == 0;
         });
 
-        // ── Draw Two ──────────────────────────────────────────────────────────
         run("draw two gives next player 2 cards", () -> {
             setupThreePlayerGame();
             Main.currentPlayer = 0;
@@ -124,7 +114,6 @@ public class UnoTests {
             return (after - before) == 2 && Main.currentPlayer == 2;
         });
 
-        // ── Wild Draw Four ────────────────────────────────────────────────────
         run("wild draw four gives next player 4 cards", () -> {
             setupThreePlayerGame();
             Main.currentPlayer = 0;
@@ -135,7 +124,6 @@ public class UnoTests {
             return (after - before) == 4 && Main.currentPlayer == 2;
         });
 
-        // ── Drawing from deck ─────────────────────────────────────────────────
         run("draw returns a card string", () -> {
             Main.deck.clear();
             Main.discard.clear();
@@ -219,15 +207,12 @@ public class UnoTests {
             return chosen == 1 && hand.get(chosen).equals("R3");
         });
 
-        // ── Edge case: number 0 ───────────────────────────────────────────────
         run("R0 legal on B0 (number 0 match)", () -> PlayRules.isLegal("R0", "B0", ""));
         run("points of R0 = 0",                () -> new Card("R0").points() == 0);
 
-        // ── Edge case: RR color/rank parse ────────────────────────────────────
         run("RR color is R (not confused by double R)", () -> new Card("RR").color().equals("R"));
         run("RR rank is REVERSE",                       () -> new Card("RR").rank() == Card.Rank.REVERSE);
 
-        // ── Scoring tally ─────────────────────────────────────────────────────
         run("tally excludes winner's hand", () -> {
             setupThreePlayerGame();
             Main.hands.get(0).clear();
@@ -237,7 +222,6 @@ public class UnoTests {
             return Main.tallyPoints() == 55;
         });
 
-        // ── codes.ConsoleView joinHand format ───────────────────────────────────────
         run("joinHand formats as '0:R5 1:GS'", () -> {
             ArrayList<String> hand = new ArrayList<>();
             hand.add("R5"); hand.add("GS");
@@ -250,14 +234,12 @@ public class UnoTests {
             return ConsoleView.joinHand(hand).equals("0:W4");
         });
 
-        // ── Summary ───────────────────────────────────────────────────────────
         System.out.println("\nUNO Characterization Tests");
         System.out.println("Passed: " + passed);
         System.out.println("Failed: " + failed);
         if (failed > 0) System.exit(1);
     }
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
 
     interface Check { boolean test() throws Exception; }
 

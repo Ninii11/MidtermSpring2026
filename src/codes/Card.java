@@ -25,7 +25,6 @@ public final class Card {
 
     public String code() { return code; }
 
-    /** Returns the color prefix: "R", "Y", "G", "B", or "" for wilds. */
     public String color() {
         if (code.startsWith("R")) return "R";
         if (code.startsWith("Y")) return "Y";
@@ -36,13 +35,11 @@ public final class Card {
 
     public Rank rank() { return rank; }
 
-    /** Face value of number cards; -1 for all other ranks. */
     public int number() {
         if (rank == Rank.NUMBER) return Integer.parseInt(code.substring(1));
         return -1;
     }
 
-    /** Scoring value per the rules. */
     public int points() {
         switch (rank) {
             case NUMBER:         return number();
@@ -58,8 +55,6 @@ public final class Card {
     public boolean isWild() {
         return rank == Rank.WILD || rank == Rank.WILD_DRAW_FOUR;
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     private static Rank parseRank(String code) {
         if (code.equals("W"))    return Rank.WILD;
