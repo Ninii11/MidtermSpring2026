@@ -16,3 +16,6 @@ COPY --from=build /app/target/uno.jar uno.jar
 
 ENTRYPOINT ["java", "-jar", "uno.jar"]
 CMD ["--bots", "3", "--games", "1", "--quiet"]
+
+# H2 database file will be created in /app/uno-data.mv.db
+VOLUME ["/app/data"]

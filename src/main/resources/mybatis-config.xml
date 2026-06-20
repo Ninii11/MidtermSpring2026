@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+    </settings>
+
+    <typeAliases>
+        <package name="codes.persistence"/>
+    </typeAliases>
+
+    <environments default="production">
+        <environment id="production">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver"   value="org.h2.Driver"/>
+                <property name="url"      value="${db.url}"/>
+                <property name="username" value="sa"/>
+                <property name="password" value=""/>
+            </dataSource>
+        </environment>
+
+        <!-- Test: in-memory H2, fresh for every test run -->
+        <environment id="test">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver"   value="org.h2.Driver"/>
+                <property name="url"      value="jdbc:h2:mem:uno_test;DB_CLOSE_DELAY=-1"/>
+                <property name="username" value="sa"/>
+                <property name="password" value=""/>
+            </dataSource>
+        </environment>
+
+    </environments>
+
+    <mappers>
+        <mapper class="codes.persistence.PlayerMapper"/>
+        <mapper class="codes.persistence.GameMapper"/>
+    </mappers>
+
+</configuration>

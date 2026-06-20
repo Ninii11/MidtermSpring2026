@@ -172,36 +172,25 @@ public class UnoTests {
             return idx != -1 && hand.get(idx).equals("R7");
         });
 
-        // ── Quirk: illegal index causes penalty, not re-prompt ────────────────
-        // An out-of-range index (e.g. 99) returned from askHumanCard() is
-        // caught by the chosen >= hand.size() check in the game loop, which
-        // adds a penalty card and advances the turn without re-prompting.
-        // We verify the game-loop side: applyEffect is NOT called, hand grows
-        // by one, and currentPlayer advances.
-        run("quirk: out-of-range index triggers penalty draw and turn loss", () -> {
+            run("quirk: out-of-range index triggers penalty draw and turn loss", () -> {
             setupThreePlayerGame();
             Main.currentPlayer = 0;
             Main.direction = 1;
             ArrayList<String> hand = Main.hands.get(0);
             int before = hand.size();
-            // Simulate what the game loop does when chosen >= hand.size()
-            hand.add(Main.draw());   // penalty card added
-            Main.next();             // turn lost
+            hand.add(Main.draw());
+            Main.next();
             int after = hand.size();
             return (after - before) == 1 && Main.currentPlayer == 1;
         });
 
-        // ── Quirk: bot auto-plays a drawn card when legal ─────────────────────
-        // When a bot draws and the drawn card is legal, chosen is set to
-        // hand.size()-1 immediately (no prompt). Verify with codes.PlayRules.
         run("quirk: bot auto-plays drawn card when legal", () -> {
             Main.upCard = "R9";
             Main.calledColor = "";
-            String drawn = "R3";  // legal on R9 (same color)
+            String drawn = "R3";
             ArrayList<String> hand = new ArrayList<>();
-            hand.add("B3");   // illegal — bot would have drawn
-            hand.add(drawn);  // just drawn, appended to end
-            // The game loop sets chosen = hand.size()-1 if isLegal(drawn)
+            hand.add("B3");
+            hand.add(drawn);
             boolean drawnIsLegal = PlayRules.isLegal(drawn, Main.upCard, Main.calledColor);
             int chosen = drawnIsLegal ? hand.size() - 1 : -1;
             return chosen == 1 && hand.get(chosen).equals("R3");
