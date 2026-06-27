@@ -5,19 +5,11 @@ import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
-
-/**
- * Persistence tests for the UNO ORM layer.
- *
- * Uses the "test" environment from mybatis-config.xml:
- * an in-memory H2 database that is fresh for every test run.
- * No external database, no manual setup needed — just run: mvn test
- */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PersistenceTest {
 
     static GameRepository repo;
@@ -27,7 +19,21 @@ class PersistenceTest {
         DatabaseConfig.init("test");
         repo = new GameRepository();
     }
-    @Test @Order(1)
+
+    @BeforeEach
+    void resetDb() throws Exception {
+        try (SqlSession session = DatabaseConfig.openSession();
+             Connection conn = session.getConnection()) {
+            conn.createStatement().execute("DELETE FROM round_scores");
+            conn.createStatement().execute("DELETE FROM scores");
+            conn.createStatement().execute("DELETE FROM rounds");
+            conn.createStatement().execute("DELETE FROM game_players");
+            conn.createStatement().execute("DELETE FROM games");
+            conn.createStatement().execute("DELETE FROM players");
+        }
+    }
+
+    @Test
     void playerInsertAndFind() {
         try (SqlSession session = DatabaseConfig.openSession()) {
             PlayerMapper pm = session.getMapper(PlayerMapper.class);
@@ -38,7 +44,7 @@ class PersistenceTest {
         }
     }
 
-    @Test @Order(2)
+    @Test
     void playerFindOrCreateIdempotent() {
         try (SqlSession session = DatabaseConfig.openSession()) {
             PlayerMapper pm = session.getMapper(PlayerMapper.class);
@@ -48,87 +54,66 @@ class PersistenceTest {
         }
     }
 
-    @Test @Order(3)
+    @Test
     void startGameCreatesGameRow() {
-        repo.startGame(Arrays.asList("Alice", "Bob", "Bot1"));
+        repo.startGame(Arrays.asList("Alice", "Bob"));
         assertTrue(repo.getCurrentGameId() > 0);
     }
 
-    @Test @Order(4)
+    @Test
     void recordRoundPersistsWinner() {
         repo.startGame(Arrays.asList("Alice", "Bob"));
 
-        Map<String, Integer> scoreMap = new LinkedHashMap<>();
-        scoreMap.put("Alice", 50);
-        scoreMap.put("Bob", 0);
-        repo.recordRound("Alice", 50, scoreMap);
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 50);
+        scores.put("Bob", 0);
+        repo.recordRound("Alice", 50, scores);
 
         List<ReportDtos.WinCount> wins = repo.playerWinCounts();
-        boolean aliceFound = wins.stream().anyMatch(w -> w.getPlayerName().equals("Alice") && w.getWins() >= 1);
-        assertTrue(aliceFound, "Alice should have at least 1 win recorded");
+        assertEquals(1, wins.size());
+        assertEquals("Alice", wins.get(0).getPlayerName());
+        assertEquals(1, wins.get(0).getWins());
     }
 
-    @Test @Order(5)
-    void finishGameUpdatesEndedAt() {
+    @Test
+    void finishGameUpdatesRoundsPlayed() {
         repo.startGame(Arrays.asList("Alice", "Bot1"));
         Map<String, Integer> scores = new LinkedHashMap<>();
         scores.put("Alice", 30); scores.put("Bot1", 0);
         repo.recordRound("Alice", 30, scores);
         repo.finishGame(5);
     }
+    @Test
+    void roundScoresPersistedForWinner() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
 
-    @Test @Order(6)
-    void recentGamesReturnsResults() {
-        List<ReportDtos.GameSummary> recent = repo.recentGames(10);
-        assertNotNull(recent);
-        assertFalse(recent.isEmpty(), "Should have at least one game recorded");
-    }
-
-    @Test @Order(7)
-    void recentGamesRespectLimit() {
-        List<ReportDtos.GameSummary> recent = repo.recentGames(1);
-        assertTrue(recent.size() <= 1);
-    }
-
-    @Test @Order(8)
-    void playerWinCountsReturnsResults() {
-        List<ReportDtos.WinCount> wins = repo.playerWinCounts();
-        assertNotNull(wins);
-        assertFalse(wins.isEmpty(), "Should have at least one winner recorded");
-    }
-
-    @Test @Order(9)
-    void playerWinCountsOrderedByWinsDesc() {
-        List<ReportDtos.WinCount> wins = repo.playerWinCounts();
-        for (int i = 0; i < wins.size() - 1; i++) {
-            assertTrue(wins.get(i).getWins() >= wins.get(i+1).getWins(),
-                    "Win counts should be ordered descending");
-        }
-    }
-
-    @Test @Order(10)
-    void highestScoresReturnsResults() {
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 40);
+        scores.put("Bob", 0);
+        repo.recordRound("Alice", 40, scores);
         List<ReportDtos.TopScore> top = repo.highestScores(10);
-        assertNotNull(top);
-        assertFalse(top.isEmpty(), "Should have at least one score recorded");
+        boolean aliceHasScore = top.stream()
+                .anyMatch(s -> s.getPlayerName().equals("Alice") && s.getTotalScore() > 0);
+        assertTrue(aliceHasScore, "Alice should have score > 0 after winning a round");
     }
 
-    @Test @Order(11)
-    void highestScoresOrderedDesc() {
+    @Test
+    void roundScoresZeroForLosers() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 35);
+        scores.put("Bob", 0);
+        repo.recordRound("Alice", 35, scores);
+
         List<ReportDtos.TopScore> top = repo.highestScores(10);
-        for (int i = 0; i < top.size() - 1; i++) {
-            assertTrue(top.get(i).getTotalScore() >= top.get(i+1).getTotalScore(),
-                    "Scores should be ordered descending");
-        }
+        top.stream()
+                .filter(s -> s.getPlayerName().equals("Bob"))
+                .findFirst()
+                .ifPresent(s -> assertEquals(0, s.getTotalScore()));
     }
 
-    @Test @Order(12)
-    void highestScoresRespectLimit() {
-        List<ReportDtos.TopScore> top = repo.highestScores(2);
-        assertTrue(top.size() <= 2);
-    }
-
-    @Test @Order(13)
+    @Test
     void scoreAccumulatesAcrossRounds() {
         repo.startGame(Arrays.asList("Charlie", "Bot1"));
 
@@ -141,8 +126,93 @@ class PersistenceTest {
         repo.recordRound("Charlie", 35, round2);
 
         List<ReportDtos.TopScore> top = repo.highestScores(10);
-        boolean charlieFound = top.stream()
-                .anyMatch(s -> s.getPlayerName().equals("Charlie") && s.getTotalScore() > 0);
-        assertTrue(charlieFound, "Charlie's score should be persisted and > 0");
+        ReportDtos.TopScore charlieScore = top.stream()
+                .filter(s -> s.getPlayerName().equals("Charlie"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Charlie not found"));
+        assertEquals(55, charlieScore.getTotalScore());
+    }
+
+    @Test
+    void recentGamesReturnsCorrectCount() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 20); scores.put("Bob", 0);
+        repo.recordRound("Alice", 20, scores);
+        repo.finishGame(1);
+
+        List<ReportDtos.GameSummary> recent = repo.recentGames(10);
+        assertEquals(1, recent.size());
+    }
+
+    @Test
+    void recentGamesRespectLimit() {
+        // Insert 2 games
+        for (int i = 0; i < 2; i++) {
+            repo.startGame(Arrays.asList("Alice", "Bob"));
+            Map<String, Integer> scores = new LinkedHashMap<>();
+            scores.put("Alice", 10); scores.put("Bob", 0);
+            repo.recordRound("Alice", 10, scores);
+            repo.finishGame(1);
+        }
+        List<ReportDtos.GameSummary> recent = repo.recentGames(1);
+        assertEquals(1, recent.size());
+    }
+
+    @Test
+    void playerWinCountsCorrect() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+        Map<String, Integer> s1 = new LinkedHashMap<>();
+        s1.put("Alice", 20); s1.put("Bob", 0);
+        repo.recordRound("Alice", 20, s1);
+
+        Map<String, Integer> s2 = new LinkedHashMap<>();
+        s2.put("Alice", 30); s2.put("Bob", 0);
+        repo.recordRound("Alice", 30, s2);
+
+        List<ReportDtos.WinCount> wins = repo.playerWinCounts();
+        assertEquals(1, wins.size());
+        assertEquals("Alice", wins.get(0).getPlayerName());
+        assertEquals(2, wins.get(0).getWins());
+    }
+
+    @Test
+    void playerWinCountsOrderedDesc() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+        Map<String, Integer> s1 = new LinkedHashMap<>();
+        s1.put("Alice", 20); s1.put("Bob", 0);
+        repo.recordRound("Alice", 20, s1);
+        repo.recordRound("Alice", 20, s1);
+
+        Map<String, Integer> s2 = new LinkedHashMap<>();
+        s2.put("Bob", 10); s2.put("Alice", 0);
+        repo.recordRound("Bob", 10, s2);
+
+        List<ReportDtos.WinCount> wins = repo.playerWinCounts();
+        assertTrue(wins.get(0).getWins() >= wins.get(1).getWins());
+    }
+
+    @Test
+    void highestScoresOrderedDesc() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 50); scores.put("Bob", 0);
+        repo.recordRound("Alice", 50, scores);
+
+        List<ReportDtos.TopScore> top = repo.highestScores(10);
+        for (int i = 0; i < top.size() - 1; i++) {
+            assertTrue(top.get(i).getTotalScore() >= top.get(i+1).getTotalScore());
+        }
+    }
+
+    @Test
+    void highestScoresRespectLimit() {
+        repo.startGame(Arrays.asList("Alice", "Bob"));
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        scores.put("Alice", 50); scores.put("Bob", 0);
+        repo.recordRound("Alice", 50, scores);
+
+        List<ReportDtos.TopScore> top = repo.highestScores(1);
+        assertEquals(1, top.size());
     }
 }

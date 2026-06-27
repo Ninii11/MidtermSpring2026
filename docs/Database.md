@@ -4,7 +4,7 @@
 
 **H2** — a pure-Java embedded database.
 
-- **Production**: file-based at `./uno-data.mv.db` — persists between runs automatically, no setup needed
+- **Production**: file-based at `./uno-data.mv.db` — created automatically, no setup needed
 - **Tests**: in-memory (`mem:uno_test`) — fresh and isolated for every `mvn test` run
 
 No installation, no credentials, no configuration required.
@@ -19,7 +19,7 @@ No installation, no credentials, no configuration required.
 
 ## Schema
 
-Five tables:
+Six tables:
 
 ```sql
 players      (id, name)
@@ -27,11 +27,39 @@ games        (id, started_at, ended_at, rounds_played)
 game_players (game_id, player_id)
 rounds       (id, game_id, winner_player_id, points_scored)
 scores       (id, game_id, player_id, total_score)
+round_scores (id, round_id, player_id, score)
 ```
 
-Schema file: `src/main/resources/schema.sql`
+### Table descriptions
 
-Tables are created automatically on first run — no manual step needed.
+| Table | Purpose |
+|-------|---------|
+| `players` | One row per unique player name |
+| `games` | One row per game session |
+| `game_players` | Links players to a game |
+| `rounds` | One row per completed round, with winner and points |
+| `scores` | Cumulative score per player per game |
+| `round_scores` | Per-round score for each player (winner gets points, others get 0) |
+
+### round_scores
+
+This table records each player's score for every individual round, linked to both `rounds` and `players`:
+
+```sql
+CREATE TABLE IF NOT EXISTS round_scores (
+    id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+    round_id  INTEGER NOT NULL REFERENCES rounds(id),
+    player_id INTEGER NOT NULL REFERENCES players(id),
+    score     INTEGER NOT NULL DEFAULT 0
+);
+```
+
+The winner of a round gets `points_scored` in `round_scores`.
+All other players get 0 for that round.
+Cumulative totals are tracked separately in `scores`.
+
+Schema file: `src/main/resources/schema.sql`
+Tables are created automatically on first run.
 
 ## How to Run Persistence Tests
 
@@ -40,37 +68,31 @@ mvn test
 ```
 
 Tests in `PersistenceTest.java` use the `"test"` environment (in-memory H2).
-No external database needed. Results in `target/surefire-reports/`.
+Each test resets all tables in `@BeforeEach` — no shared state between tests.
+No external database needed.
 
 ## How to View Game History and Statistics
 
-After playing at least one game, run:
+After playing at least one game:
 
 ```bash
-# Local
 java -jar target/uno.jar --report
-
-# Docker
-docker run --rm -v uno-data:/app uno-cli --report
 ```
 
 Output:
-
 ```
 === Recent Games (last 10) ===
-  Game#1 | 2026-06-20 09:29:15.828771 | 11 rounds | Winner: Bot1 (80 pts)
+  Game#1 | 2026-06-20 09:15:00 | 35 rounds | Winner: Bot2 (84 pts)
 
 === Player Win Counts ===
+  Bot2            3 win(s)
   Bot1            1 win(s)
 
 === Highest Scores (top 10) ===
-  Bot1            80 pts  (Game#1)
-  Bot2            0 pts  (Game#1)
+  Bot2            84 pts  (Game#1)
 ```
 
 ## Running Without Database
-
-If you want to run without any persistence (e.g. quick test):
 
 ```bash
 java -jar target/uno.jar --bots 2 --games 1 --no-db

@@ -21,12 +21,21 @@ public interface GameMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertRound(Round round);
 
-    @Insert("INSERT INTO scores (game_id, player_id, total_score) VALUES (#{gameId}, #{playerId}, #{totalScore})")
+    @Insert("INSERT INTO scores (game_id, player_id, total_score) " +
+            "VALUES (#{gameId}, #{playerId}, #{totalScore})")
     void insertScore(Score score);
 
     @Update("UPDATE scores SET total_score = total_score + #{points} " +
             "WHERE game_id = #{gameId} AND player_id = #{playerId}")
-    void addToScore(@Param("gameId") int gameId, @Param("playerId") int playerId, @Param("points") int points);
+    void addToScore(@Param("gameId") int gameId,
+                    @Param("playerId") int playerId,
+                    @Param("points") int points);
+
+    @Insert("INSERT INTO round_scores (round_id, player_id, score) " +
+            "VALUES (#{roundId}, #{playerId}, #{score})")
+    void insertRoundScore(@Param("roundId") int roundId,
+                          @Param("playerId") int playerId,
+                          @Param("score") int score);
 
     @Select("""
             SELECT
@@ -47,7 +56,7 @@ public interface GameMapper {
 
     @Select("""
             SELECT
-                p.name AS playerName,
+                p.name      AS playerName,
                 COUNT(r.id) AS wins
             FROM players p
             JOIN rounds r ON r.winner_player_id = p.id
@@ -59,9 +68,9 @@ public interface GameMapper {
 
     @Select("""
             SELECT
-                p.name AS playerName,
+                p.name        AS playerName,
                 s.total_score AS totalScore,
-                s.game_id AS gameId
+                s.game_id     AS gameId
             FROM scores s
             JOIN players p ON p.id = s.player_id
             ORDER BY s.total_score DESC
